@@ -287,8 +287,11 @@ function showTemporaryNotification(message) {
 
   if (document.body) {
     appendNotification();
-  } else if (document.readyState === 'loading') {
+  } else if (document.readyState !== 'loading') {
+    // Document is already interactive or complete, but body doesn't exist (rare edge case)
+    // Skip notification as document structure is likely abnormal
+  } else {
+    // Document is still loading, wait for DOMContentLoaded
     document.addEventListener('DOMContentLoaded', appendNotification, { once: true });
   }
-  // If body is unavailable and document is not loading, skip showing notification
 }
