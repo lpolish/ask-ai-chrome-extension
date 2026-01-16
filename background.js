@@ -28,11 +28,15 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       chrome.tabs.sendMessage(tabs[0].id, {action: "clearConversation"}, function(response) {
         if (chrome.runtime.lastError) {
-          console.error("Error sending message:", chrome.runtime.lastError.message);
+          console.error("Error sending clear message:", chrome.runtime.lastError.message);
         } else if (response && response.success) {
           console.log("Conversation cleared successfully");
           // Show a notification to the user
-          chrome.tabs.sendMessage(tabs[0].id, {action: "showNotification", message: "AI conversation history cleared for this tab"});
+          chrome.tabs.sendMessage(tabs[0].id, {action: "showNotification", message: "AI conversation history cleared for this tab"}, function(notifResponse) {
+            if (chrome.runtime.lastError) {
+              console.error("Error showing notification:", chrome.runtime.lastError.message);
+            }
+          });
         }
       });
     });

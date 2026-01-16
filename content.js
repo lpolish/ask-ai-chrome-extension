@@ -3,6 +3,9 @@ console.log("Content script loaded");
 // Store conversation history for the current tab
 let conversationHistory = [];
 
+// Maximum conversation messages to keep (10 exchanges = 20 messages)
+const MAX_CONVERSATION_MESSAGES = 20;
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Message received in content script:", request);
   if (request.action === "openAIPrompt") {
@@ -162,8 +165,8 @@ function sendAIRequest(prompt, element, theme) {
       });
       
       // Keep only last 10 exchanges (20 messages) to avoid token limits
-      if (conversationHistory.length > 20) {
-        conversationHistory = conversationHistory.slice(-20);
+      if (conversationHistory.length > MAX_CONVERSATION_MESSAGES) {
+        conversationHistory = conversationHistory.slice(-MAX_CONVERSATION_MESSAGES);
       }
       
       insertTextIntoElement(element, aiResponse);
@@ -215,15 +218,24 @@ function showTemporaryNotification(message) {
     font-family: Arial, sans-serif;
     font-size: 14px;
     max-width: 300px;
-    animation: slideIn 0.3s ease-out;
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
   `;
   
   document.body.appendChild(notification);
   
+  // Trigger fade in
   setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease-out';
+    notification.style.opacity = '1';
+  }, 10);
+  
+  // Fade out and remove after 3 seconds
+  setTimeout(() => {
+    notification.style.opacity = '0';
     setTimeout(() => {
-      document.body.removeChild(notification);
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
     }, 300);
   }, 3000);
 }
