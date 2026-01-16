@@ -61,29 +61,40 @@ function isEditableElement(element) {
   return false;
 }
 
+// Cache for static page context (URL, title, domain, meta description)
+let cachedPageContext = null;
+
 function getPageContext() {
   const selectedText = window.getSelection().toString();
+  
+  // Build or reuse cached static context
+  if (!cachedPageContext) {
+    cachedPageContext = {
+      url: window.location.href,
+      title: document.title,
+      domain: window.location.hostname
+    };
+    
+    // Get page meta description if available (cached once)
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      cachedPageContext.pageDescription = metaDescription.getAttribute('content');
+    }
+  }
+  
+  // Create context object with cached static data and dynamic data
   const pageContext = {
-    url: window.location.href,
-    title: document.title,
-    selectedText: selectedText,
-    domain: window.location.hostname,
-    timestamp: new Date().toISOString()
+    ...cachedPageContext,
+    selectedText: selectedText
   };
   
-  // Get surrounding text context if available
+  // Get surrounding text context if available (dynamic, checked each time)
   const activeElement = document.activeElement;
   if (activeElement && isEditableElement(activeElement)) {
     const currentContent = activeElement.value || activeElement.textContent || '';
     if (currentContent.length > 0 && currentContent.length < 1000) {
       pageContext.currentFieldContent = currentContent;
     }
-  }
-  
-  // Get page meta description if available
-  const metaDescription = document.querySelector('meta[name="description"]');
-  if (metaDescription) {
-    pageContext.pageDescription = metaDescription.getAttribute('content');
   }
   
   return pageContext;
@@ -152,9 +163,38 @@ function sendAIRequest(prompt, element, theme) {
     .then(response => response.json())
     .then(data => {
       console.log("AI response received:", data);
+
+      // Handle OpenAI API error responses
+      if (data && data.error) {
+        console.error("OpenAI API error:", data.error);
+        alert(data.error.message || "An error occurred while processing your request.");
+        return;
+      }
+
+      // Validate expected response structure
+      if (
+        !data ||
+        !Array.isArray(data.choices) ||
+        data.choices.length === 0 ||
+        !data.choices[0] ||
+        !data.choices[0].message ||
+        typeof data.choices[0].message.content !== "string"
+      ) {
+        console.error("Unexpected OpenAI API response format:", data);
+        alert("Received an unexpected response from the AI service.");
+        return;
+      }
+
       const aiResponse = data.choices[0].message.content;
       
-      // Add to conversation history
+      // Validate aiResponse has actual content
+      if (!aiResponse || aiResponse.trim().length === 0) {
+        console.error("AI response is empty:", data);
+        alert("Received an empty response from the AI service.");
+        return;
+      }
+      
+      // Add to conversation history only after successful validation
       conversationHistory.push({
         role: "user",
         content: prompt
@@ -222,20 +262,33 @@ function showTemporaryNotification(message) {
     transition: opacity 0.3s ease-out;
   `;
   
-  document.body.appendChild(notification);
-  
-  // Trigger fade in
-  setTimeout(() => {
-    notification.style.opacity = '1';
-  }, 10);
-  
-  // Fade out and remove after 3 seconds
-  setTimeout(() => {
-    notification.style.opacity = '0';
+  const appendNotification = () => {
+    if (!document.body) {
+      return;
+    }
+
+    document.body.appendChild(notification);
+
+    // Trigger fade in
     setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300);
-  }, 3000);
+      notification.style.opacity = '1';
+    }, 10);
+
+    // Fade out and remove after 3 seconds
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
+  };
+
+  if (document.body) {
+    appendNotification();
+  } else if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', appendNotification, { once: true });
+  }
+  // If body is unavailable and document is not loading, skip showing notification
 }

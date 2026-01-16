@@ -15,6 +15,11 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "askAI") {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      if (!tabs || tabs.length === 0) {
+        console.error("No active tab found");
+        return;
+      }
+      
       chrome.tabs.sendMessage(tabs[0].id, {action: "openAIPrompt"}, function(response) {
         if (chrome.runtime.lastError) {
           console.error("Error sending message:", chrome.runtime.lastError.message);
@@ -26,17 +31,24 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     });
   } else if (info.menuItemId === "clearConversation") {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      if (!tabs || tabs.length === 0) {
+        console.error("No active tab found");
+        return;
+      }
+      
       chrome.tabs.sendMessage(tabs[0].id, {action: "clearConversation"}, function(response) {
         if (chrome.runtime.lastError) {
           console.error("Error sending clear message:", chrome.runtime.lastError.message);
         } else if (response && response.success) {
           console.log("Conversation cleared successfully");
-          // Show a notification to the user
-          chrome.tabs.sendMessage(tabs[0].id, {action: "showNotification", message: "AI conversation history cleared for this tab"}, function(notifResponse) {
-            if (chrome.runtime.lastError) {
-              console.error("Error showing notification:", chrome.runtime.lastError.message);
-            }
-          });
+          // Show a notification to the user after a short delay to avoid race conditions
+          setTimeout(() => {
+            chrome.tabs.sendMessage(tabs[0].id, {action: "showNotification", message: "AI conversation history cleared for this tab"}, function(notifResponse) {
+              if (chrome.runtime.lastError) {
+                console.error("Error showing notification:", chrome.runtime.lastError.message);
+              }
+            });
+          }, 100);
         }
       });
     });
