@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="This is a test page for the Ask AI Chrome Extension with context awareness">
+  <title>Ask AI Extension - Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+    }
+    .test-section {
+      margin: 30px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .instructions {
+      background-color: #e3f2fd;
+      padding: 15px;
+      border-left: 4px solid #2196F3;
+      margin-bottom: 20px;
+    }
+    .feature-list {
+      background-color: #f1f8e9;
+      padding: 15px;
+      border-left: 4px solid #8bc34a;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ask AI Extension - Test Page</h1>
+  
+  <div class="instructions">
+    <h2>Testing Instructions</h2>
+    <ol>
+      <li>Install the Ask AI Extension in Chrome</li>
+      <li>Configure your OpenAI API key in the extension options</li>
+      <li>Right-click in any text field below</li>
+      <li>Select "Ask AI to..." from the context menu</li>
+      <li>Test the context-aware features by making multiple requests</li>
+      <li>Right-click anywhere and select "Clear AI conversation history" to reset</li>
+    </ol>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 1: Basic Text Input</h3>
+    <p>Try asking: "Write a greeting" then follow up with "Make it more formal"</p>
+    <input type="text" placeholder="Right-click here and ask AI...">
+  </div>
+
+  <div class="test-section">
+    <h3>Test 2: Textarea with Context</h3>
+    <p>Try asking: "Summarize this page" - The AI should understand the page context</p>
+    <textarea placeholder="Right-click here to test context awareness..."></textarea>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 3: Conversation History</h3>
+    <p>Test multi-turn conversation:</p>
+    <ol>
+      <li>Ask: "What is React?"</li>
+      <li>Then ask: "What are its main features?" (should reference previous answer)</li>
+      <li>Then ask: "How does it compare to Vue?" (should maintain context)</li>
+    </ol>
+    <textarea placeholder="Test conversation memory here..."></textarea>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 4: ContentEditable Div</h3>
+    <p>This tests support for contenteditable elements:</p>
+    <div contenteditable="true" style="border: 1px solid #ccc; padding: 10px; min-height: 80px; background: white;">
+      Click here and right-click to test with contenteditable...
+    </div>
+  </div>
+
+  <div class="feature-list">
+    <h3>Features to Validate</h3>
+    <ul>
+      <li>✓ Conversation history persists across multiple requests in the same tab</li>
+      <li>✓ Page context (URL, title, meta description) is included</li>
+      <li>✓ Selected text is recognized and included in context</li>
+      <li>✓ Current field content is considered when available</li>
+      <li>✓ "Clear AI conversation history" option works</li>
+      <li>✓ Notification appears when conversation is cleared</li>
+      <li>✓ AI provides contextually relevant responses</li>
+      <li>✓ Follow-up questions reference previous messages</li>
+    </ul>
+  </div>
+
+  <div class="test-section">
+    <h3>Test 5: Page Context Awareness</h3>
+    <p>Select some text on this page, then right-click in the field below and ask about the selected text.</p>
+    <p><strong>Sample text to select:</strong> "The Ask AI Extension now supports context-aware conversations with full page understanding."</p>
+    <textarea placeholder="Ask about selected text or page content..."></textarea>
+  </div>
+
+</body>
+</html>
