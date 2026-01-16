@@ -1,5 +1,8 @@
 console.log("Content script loaded");
 
+// Store conversation history for the current tab
+let conversationHistory = [];
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Message received in content script:", request);
   if (request.action === "openAIPrompt") {
@@ -20,6 +23,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log("No editable element found");
       alert("Please select an editable element before using 'Ask AI to...'");
     }
+    sendResponse({ success: true });
+  } else if (request.action === "clearConversation") {
+    conversationHistory = [];
+    sendResponse({ success: true });
+  } else if (request.action === "showNotification") {
+    showTemporaryNotification(request.message);
     sendResponse({ success: true });
   }
   return true;
@@ -49,9 +58,83 @@ function isEditableElement(element) {
   return false;
 }
 
+function getPageContext() {
+  const selectedText = window.getSelection().toString();
+  const pageContext = {
+    url: window.location.href,
+    title: document.title,
+    selectedText: selectedText,
+    domain: window.location.hostname,
+    timestamp: new Date().toISOString()
+  };
+  
+  // Get surrounding text context if available
+  const activeElement = document.activeElement;
+  if (activeElement && isEditableElement(activeElement)) {
+    const currentContent = activeElement.value || activeElement.textContent || '';
+    if (currentContent.length > 0 && currentContent.length < 1000) {
+      pageContext.currentFieldContent = currentContent;
+    }
+  }
+  
+  // Get page meta description if available
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) {
+    pageContext.pageDescription = metaDescription.getAttribute('content');
+  }
+  
+  return pageContext;
+}
+
+function buildContextualMessages(userPrompt) {
+  const pageContext = getPageContext();
+  const messages = [];
+  
+  // Add system message with page context
+  const contextParts = [
+    `You are assisting a user on the webpage: "${pageContext.title}"`,
+    `URL: ${pageContext.url}`,
+    `Domain: ${pageContext.domain}`
+  ];
+  
+  if (pageContext.pageDescription) {
+    contextParts.push(`Page description: ${pageContext.pageDescription}`);
+  }
+  
+  if (pageContext.selectedText && pageContext.selectedText.trim().length > 0) {
+    contextParts.push(`Selected text: "${pageContext.selectedText}"`);
+  }
+  
+  if (pageContext.currentFieldContent && pageContext.currentFieldContent.trim().length > 0) {
+    contextParts.push(`Current field content: "${pageContext.currentFieldContent}"`);
+  }
+  
+  contextParts.push('Please provide helpful, context-aware responses based on this information.');
+  
+  messages.push({
+    role: "system",
+    content: contextParts.join('\n')
+  });
+  
+  // Add conversation history
+  conversationHistory.forEach(msg => {
+    messages.push(msg);
+  });
+  
+  // Add current user prompt
+  messages.push({
+    role: "user",
+    content: userPrompt
+  });
+  
+  return messages;
+}
+
 function sendAIRequest(prompt, element, theme) {
   console.log("Sending AI request:", prompt);
   chrome.storage.sync.get(["apiKey"], (result) => {
+    const messages = buildContextualMessages(prompt);
+    
     fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -60,13 +143,29 @@ function sendAIRequest(prompt, element, theme) {
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }]
+        messages: messages
       })
     })
     .then(response => response.json())
     .then(data => {
       console.log("AI response received:", data);
       const aiResponse = data.choices[0].message.content;
+      
+      // Add to conversation history
+      conversationHistory.push({
+        role: "user",
+        content: prompt
+      });
+      conversationHistory.push({
+        role: "assistant",
+        content: aiResponse
+      });
+      
+      // Keep only last 10 exchanges (20 messages) to avoid token limits
+      if (conversationHistory.length > 20) {
+        conversationHistory = conversationHistory.slice(-20);
+      }
+      
       insertTextIntoElement(element, aiResponse);
     })
     .catch(error => {
@@ -98,4 +197,33 @@ function insertTextIntoElement(element, text) {
     // For custom elements with 'role' attribute
     element.textContent += text;
   }
+}
+
+function showTemporaryNotification(message) {
+  const notification = document.createElement('div');
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #4299e1;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    max-width: 300px;
+    animation: slideIn 0.3s ease-out;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
 }

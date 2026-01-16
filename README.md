@@ -7,7 +7,11 @@ The Ask AI Chrome Extension is a powerful tool that allows users to interact wit
 ## Features
 
 - Context menu integration for easy access
+- **Context-aware conversations**: Maintains conversation history within each tab
+- **Page context understanding**: AI has access to page title, URL, selected text, and current field content
+- **Persistent conversation thread**: Follow-up questions reference previous interactions
 - Works with various editable elements (text inputs, textareas, contenteditable divs)
+- Clear conversation history option to start fresh
 - Customizable theme options (system, light, dark)
 - Secure storage of OpenAI API key
 - Seamless integration with OpenAI's GPT-3.5 Turbo model
@@ -34,6 +38,9 @@ The Ask AI Chrome Extension is a powerful tool that allows users to interact wit
 2. Select "Ask AI to..." from the context menu.
 3. Enter your question or prompt in the dialog box that appears.
 4. The AI-generated response will be inserted directly into the text field.
+5. **Context-aware interactions**: The AI remembers your previous interactions within the same tab and understands the current page context (URL, title, selected text).
+6. **Continue the conversation**: Ask follow-up questions and the AI will reference previous messages.
+7. **Clear conversation**: Right-click anywhere on the page and select "Clear AI conversation history" to start a fresh conversation.
 
 ## Privacy and Security
 
